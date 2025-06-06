@@ -17,3 +17,9 @@
 
 **Sample Data Row:**
 | 2024-06-01 | "Gold prices likely to rise amid global uncertainty." | 50000 | 50500 | 49500 | 50200 | 1500 | 1 |
+
+Data Preprocessing
+===================
+
+1) During Preprocessing of data, find the mean, median and maximum length of text (sequence length). This would help to tune hyper parameter on sequence lenght.
+
