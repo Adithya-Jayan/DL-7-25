@@ -177,3 +177,64 @@ else:
 
     except Exception as e:
         print(f"An error occurred during dataset loading or processing: {e}")
+
+# Step 13: Model Testing
+def predict_sentiment(text, model, tokenizer, device):
+    # Move model to specified device
+    model = model.to(device)
+    
+    # Prepare input
+    inputs = tokenizer(
+        text,
+        return_tensors="pt",
+        padding=True,
+        truncation=True,
+        max_length=512
+    )
+    
+    # Move input tensors to device
+    inputs = {k: v.to(device) for k, v in inputs.items()}
+    
+    # Set model to evaluation mode
+    model.eval()
+    
+    # Get predictions
+    with torch.no_grad():
+        outputs = model(**inputs)
+        logits = outputs.logits
+        probs = torch.nn.functional.softmax(logits, dim=-1)
+        
+    # Convert to numpy for easier handling
+    logits = logits.cpu().numpy()
+    probs = probs.cpu().numpy()
+    
+    # Get predicted class
+    predicted_class = np.argmax(logits, axis=1)[0]
+    
+    # Map to sentiment labels
+    sentiment_map = {0: "negative", 1: "neutral", 2: "positive"}
+    
+    return {
+        "text": text,
+        "sentiment": sentiment_map[predicted_class],
+        "logits": logits[0],
+        "probabilities": probs[0]
+    }
+
+# Before testing, ensure model is on correct device
+model = model.to(device)
+
+# Test the model with example texts
+test_texts = [
+    "The company reported strong earnings, beating market expectations.",
+    "Stock prices remained unchanged in today's trading session.",
+    "The company's shares plummeted after the earnings miss."
+]
+
+print("\nTesting the model:")
+for text in test_texts:
+    result = predict_sentiment(text, model, tokenizer, device)
+    print(f"\nText: {result['text']}")
+    print(f"Sentiment: {result['sentiment']}")
+    print(f"Logits: {result['logits']}")
+    print(f"Probabilities: {result['probabilities']}")
