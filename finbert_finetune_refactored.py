@@ -453,7 +453,7 @@ def predict_sentiment(text, model, tokenizer, device):
             predicted_class = torch.argmax(probs, dim=1)[0].item()
 
         # Map prediction to sentiment
-        sentiment_map = {0: "negative", 1: "neutral", 2: "positive"}
+        sentiment_map = {0: "positive", 1: "neutral", 2: "negative"}
         confidence = probs[0][predicted_class].item()
 
         return {
@@ -462,9 +462,9 @@ def predict_sentiment(text, model, tokenizer, device):
             "confidence": f"{confidence:.4f}",
             "logits": logits[0].cpu().numpy().tolist(),
             "probabilities": {
-                "negative": f"{probs[0][0].item():.4f}",
+                "positive": f"{probs[0][0].item():.4f}",
                 "neutral": f"{probs[0][1].item():.4f}",
-                "positive": f"{probs[0][2].item():.4f}"
+                "negative": f"{probs[0][2].item():.4f}"
             }
         }
 
