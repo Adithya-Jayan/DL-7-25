@@ -6,14 +6,14 @@ import wandb
 import matplotlib.pyplot as plt
 import seaborn as sns
 from datasets import Dataset, DatasetDict, load_dataset
-from peft import LoraConfig, get_peft_model, TaskType
+from peft import LoraConfig, get_peft_model, TaskType, PeftModel
 from sklearn.metrics import (
     accuracy_score, 
     f1_score, 
     classification_report, 
     confusion_matrix
 )
-from sklearn.model_selection import KFold
+from sklearn.model_selection import StratifiedKFold
 from sklearn.utils.class_weight import compute_class_weight
 from transformers import (
     AutoConfig,
@@ -26,7 +26,9 @@ from transformers import (
 
 #traindt = "Labeled_bullionvault_articles.csv"
 #traindt = "yahoo_news.csv"
-traindt = "Final_reuters_articles_processed 1.csv"
+#traindt = "Final_reuters_articles_processed 1.csv"
+#traindt = "reuters_tokenizer_ready.csv"
+traindt = "Final_gold-dataset-sinha-khandait1.csv"
 
 class CustomTrainer(Trainer):
     """Custom trainer with class weights support"""
@@ -94,6 +96,13 @@ def calculate_detailed_metrics(trainer, dataset, split_name="Validation"):
     
     return metrics
 
+def print_trainable_lora_modules(model):
+    for name, param in model.named_parameters():
+        if param.requires_grad:
+            print(f"{name}: {param.numel()}")
+
+    model.print_trainable_parameters()
+
 def train_and_evaluate_fold(fold_dataset, model, tokenizer, device, fold_num, n_splits):
     """Train and evaluate a single fold"""
     try:
@@ -117,15 +126,15 @@ def train_and_evaluate_fold(fold_dataset, model, tokenizer, device, fold_num, n_
         # Training arguments
         training_args = TrainingArguments(
             output_dir=f"./finbert_fold_{fold_num}",
-            per_device_train_batch_size=8,
-            per_device_eval_batch_size=4,
-            num_train_epochs=10,
+            per_device_train_batch_size=4,
+            per_device_eval_batch_size=2,
+            num_train_epochs=5,
             learning_rate=5e-5,
             warmup_steps=500,
             weight_decay=0.1,
-            logging_steps=20,
-            eval_steps=100,
-            save_steps=100,
+            logging_steps=500,
+            eval_steps=1500,
+            save_steps=1500,
             evaluation_strategy="steps",
             save_strategy="steps",
             load_best_model_at_end=True,
@@ -174,9 +183,8 @@ def tokenize_dataset(dataset_dict, tokenizer):
             # Convert to int if string
             if isinstance(label, str):
                 label = int(label)
-            
-            # Map labels
-            if label in [-1, 0, 1]:
+            # Only map if -1 is present in the dataset
+            if -1 in examples["label"]:
                 label_map = {-1: 0, 0: 1, 1: 2}
                 return label_map[label]
             elif label in [0, 1, 2]:
@@ -233,10 +241,10 @@ def tokenize_dataset(dataset_dict, tokenizer):
         print(f"Error in tokenize_dataset: {e}")
         raise
 
-def train_kfold(model, tokenizer, dataset, device, n_splits=5):
+def train_kfold(model, tokenizer, dataset, device, n_splits=3):
     """Perform k-fold cross validation"""
     try:
-        kf = KFold(n_splits=n_splits, shuffle=True, random_state=42)
+        kf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=42)
         fold_results = []
         best_f1 = 0
         best_model = None
@@ -245,17 +253,24 @@ def train_kfold(model, tokenizer, dataset, device, n_splits=5):
         dataset_dict = {'text': dataset['text'], 'label': dataset['label']}
         
         # Train each fold
-        for fold_num, (train_idx, val_idx) in enumerate(kf.split(dataset_dict['text'])):
+        for fold_num, (train_idx, val_idx) in enumerate(kf.split(dataset_dict['text'], dataset_dict['label'])):
             print(f"\n=== Preparing Fold {fold_num + 1}/{n_splits} ===")
-            
             # Create fold datasets
+            train_labels = [dataset_dict['label'][i] for i in train_idx]
+            val_labels = [dataset_dict['label'][i] for i in val_idx]
+            # Check if all classes are present in the training set
+            if len(set(train_labels)) < 3:
+                print(f"Skipping fold {fold_num + 1}: Not all classes present in training set ({set(train_labels)})")
+                continue
+            print(f"Train label counts for fold {fold_num + 1}: {np.bincount(train_labels)}")
+            print(f"Validation label counts for fold {fold_num + 1}: {np.bincount(val_labels)}")
             train_fold = {
                 'text': [dataset_dict['text'][i] for i in train_idx],
-                'label': [dataset_dict['label'][i] for i in train_idx]
+                'label': train_labels
             }
             val_fold = {
                 'text': [dataset_dict['text'][i] for i in val_idx],
-                'label': [dataset_dict['label'][i] for i in val_idx]
+                'label': val_labels
             }
             
             # Create DatasetDict with proper format
@@ -283,7 +298,11 @@ def train_kfold(model, tokenizer, dataset, device, n_splits=5):
                 # Track best model
                 if metrics['validation']['f1'] > best_f1:
                     best_f1 = metrics['validation']['f1']
-                    best_model = model.clone()
+                    # Save the best model's weights to disk
+                    model.save_pretrained(f"./best_model_fold_{fold_num}")
+                    best_model_path = f"./best_model_fold_{fold_num}"
+                    print(f"New best model found for fold {fold_num + 1} with F1: {best_f1:.4f}")
+                    print(f"Model saved to {best_model_path}")
         
         # Calculate and print average metrics
         if fold_results:
@@ -300,7 +319,16 @@ def train_kfold(model, tokenizer, dataset, device, n_splits=5):
             print(f"Average Validation Accuracy: {avg_metrics['val_accuracy']:.4f}")
             print(f"Average Validation F1: {avg_metrics['val_f1']:.4f}")
             
-            return best_model, avg_metrics, fold_results
+            # Reload the best model from disk
+            try:
+                best_model = PeftModel.from_pretrained("ProsusAI/finbert", best_model_path)
+            except Exception as e:
+                print(f"Error loading best model: {e}")
+                best_model = None
+            if best_model is not None:
+                best_model.save_pretrained("./finbert_best_model")
+                tokenizer.save_pretrained("./finbert_best_model")
+                return best_model, avg_metrics, fold_results, best_model_path
         
         return None, None, None
         
@@ -321,10 +349,25 @@ def main():
         # Initialize model and tokenizer
         model_id = "ProsusAI/finbert"
         tokenizer = AutoTokenizer.from_pretrained(model_id)
-        model = AutoModelForSequenceClassification.from_pretrained(
+        base_model = AutoModelForSequenceClassification.from_pretrained(
             model_id,
             num_labels=3
         )
+
+        # LoRA configuration
+        lora_config = LoraConfig(
+            r=8,
+            lora_alpha=16,
+            target_modules=["query", "value", "key"],
+            lora_dropout=0.1,
+            bias="none",
+            task_type=TaskType.SEQ_CLS
+        )
+
+        # Apply LoRA to the model
+        model = get_peft_model(base_model, lora_config)
+        print("LoRA modules applied.")
+        print_trainable_lora_modules(model)
         
         # Set device
         device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
@@ -347,7 +390,7 @@ def main():
             raise ValueError(f"Invalid labels found in dataset: {invalid_labels}")
         
         # Perform k-fold training
-        best_model, avg_metrics, fold_results = train_kfold(
+        best_model, avg_metrics, fold_results, best_model_path = train_kfold(
             model, 
             tokenizer, 
             raw_dataset, 
@@ -356,7 +399,7 @@ def main():
         
         if best_model is not None:
             # Save best model
-            best_model.save_pretrained("./finbert_best_model")
+            model.save_pretrained("./finbert_best_model")  # This is correct for PEFT
             tokenizer.save_pretrained("./finbert_best_model")
             
             # Save metrics
@@ -365,16 +408,23 @@ def main():
                 for metric, value in avg_metrics.items():
                     f.write(f"{metric}: {value:.4f}\n")
             
-            return best_model, tokenizer, avg_metrics, fold_results
+            return best_model, tokenizer, avg_metrics, fold_results, best_model_path
             
-        return None, None, None, None
+        return None, None, None, None, None
         
     except Exception as e:
         print(f"Error in main: {e}")
         return None, None, None, None
 
 if __name__ == "__main__":
-    model, tokenizer, metrics, fold_results = main()
+    model, tokenizer, metrics, fold_results, best_model_path = main()
+
+    # Only merge and save if best_model_path is valid
+    if best_model_path:
+        base_model = AutoModelForSequenceClassification.from_pretrained("ProsusAI/finbert", num_labels=3)
+        best_model = PeftModel.from_pretrained(base_model, best_model_path)
+        merged_model = best_model.merge_and_unload()
+        merged_model.save_pretrained("./finbert_best_model_merged")
 
 def predict_sentiment(text, model, tokenizer, device):
     """
@@ -403,7 +453,7 @@ def predict_sentiment(text, model, tokenizer, device):
             predicted_class = torch.argmax(probs, dim=1)[0].item()
 
         # Map prediction to sentiment
-        sentiment_map = {0: "negative", 1: "neutral", 2: "positive"}
+        sentiment_map = {0: "positive", 1: "neutral", 2: "negative"}
         confidence = probs[0][predicted_class].item()
 
         return {
@@ -412,9 +462,9 @@ def predict_sentiment(text, model, tokenizer, device):
             "confidence": f"{confidence:.4f}",
             "logits": logits[0].cpu().numpy().tolist(),
             "probabilities": {
-                "negative": f"{probs[0][0].item():.4f}",
+                "positive": f"{probs[0][0].item():.4f}",
                 "neutral": f"{probs[0][1].item():.4f}",
-                "positive": f"{probs[0][2].item():.4f}"
+                "negative": f"{probs[0][2].item():.4f}"
             }
         }
 
@@ -422,7 +472,7 @@ def predict_sentiment(text, model, tokenizer, device):
         print(f"Error in prediction: {e}")
         return None
 
-def test_model(model_path="./finbert_best_model"):
+def test_model(model_path="./finbert_best_model_merged"):
     """
     Test the trained model on sample texts
     """
@@ -456,3 +506,5 @@ def test_model(model_path="./finbert_best_model"):
     except Exception as e:
         print(f"Error in testing: {e}")
         return None
+
+
