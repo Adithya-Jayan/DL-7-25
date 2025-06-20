@@ -132,9 +132,9 @@ def train_and_evaluate_fold(fold_dataset, model, tokenizer, device, fold_num, n_
             learning_rate=5e-5,
             warmup_steps=500,
             weight_decay=0.1,
-            logging_steps=20,
-            eval_steps=500,
-            save_steps=500,
+            logging_steps=500,
+            eval_steps=1500,
+            save_steps=1500,
             evaluation_strategy="steps",
             save_strategy="steps",
             load_best_model_at_end=True,
@@ -408,9 +408,9 @@ def main():
                 for metric, value in avg_metrics.items():
                     f.write(f"{metric}: {value:.4f}\n")
             
-            return best_model, tokenizer, avg_metrics, fold_results
+            return best_model, tokenizer, avg_metrics, fold_results, best_model_path
             
-        return None, None, None, None
+        return None, None, None, None, None
         
     except Exception as e:
         print(f"Error in main: {e}")
