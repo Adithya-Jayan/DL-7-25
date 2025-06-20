@@ -472,7 +472,7 @@ def predict_sentiment(text, model, tokenizer, device):
         print(f"Error in prediction: {e}")
         return None
 
-def test_model(model_path="./finbert_best_model"):
+def test_model(model_path="./finbert_best_model_merged"):
     """
     Test the trained model on sample texts
     """
