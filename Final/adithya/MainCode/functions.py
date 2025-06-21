@@ -1,6 +1,5 @@
 #Import necessary packages.
 import tensorflow_hub as hub
-import tensorflow as tf
 import pandas as pd
 import numpy as np
 
@@ -80,3 +79,14 @@ def add_gold_price_change(df_data,df_gold):
     final_df = merged_df[['Date','text','sentiment','topic_encodings','sentiment_combined_encodings','price_percentage_change']].copy()
 
     return final_df
+
+def group_into_set(df,articles_per_day):
+
+    # Create dataset and dataloader
+    encodings = df.groupby('Date')['sentiment_combined_encodings'].apply(list).apply(lambda x: [x[i%len(x)] for i in range(articles_per_day)])
+    price_percentage_changes = df.groupby('Date').first()['price_percentage_change'].values
+
+    encodings = np.array(encodings.tolist(), dtype=np.float32)
+    price_percentage_changes = np.array(price_percentage_changes, dtype=np.float32).reshape(-1, 1)  # Ensure shape is (N, 1)
+
+    return(encodings, price_percentage_changes)
