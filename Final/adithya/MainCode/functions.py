@@ -80,13 +80,43 @@ def add_gold_price_change(df_data,df_gold):
 
     return final_df
 
-def group_into_set(df,articles_per_day):
-
-    # Create dataset and dataloader
-    encodings = df.groupby('Date')['sentiment_combined_encodings'].apply(list).apply(lambda x: [x[i%len(x)] for i in range(articles_per_day)])
-    price_percentage_changes = df.groupby('Date').first()['price_percentage_change'].values
-
-    encodings = np.array(encodings.tolist(), dtype=np.float32)
-    price_percentage_changes = np.array(price_percentage_changes, dtype=np.float32).reshape(-1, 1)  # Ensure shape is (N, 1)
-
-    return(encodings, price_percentage_changes)
+def group_into_variable_sets(df, max_articles_per_day=None):
+    """
+    Group data into variable-sized sets with padding and masking
+    """
+    # Group by date and get actual lists
+    grouped = df.groupby('Date')['sentiment_combined_encodings'].apply(list)
+    price_changes = df.groupby('Date').first()['price_percentage_change'].values
+    
+    # Find max set size if not provided
+    if max_articles_per_day is None:
+        max_articles_per_day = max(len(articles) for articles in grouped)
+        print(f"Max articles per day: {max_articles_per_day}")
+    
+    # Pad sequences and create masks
+    padded_encodings = []
+    masks = []
+    
+    for articles in grouped:
+        current_length = len(articles)
+        
+        # Pad with zeros if needed
+        if current_length < max_articles_per_day:
+            # Assuming articles are numpy arrays or lists of same dimension
+            encoding_dim = len(articles[0]) if current_length > 0 else 768  # Default embedding dim
+            padded = articles + [np.zeros(encoding_dim)] * (max_articles_per_day - current_length)
+        else:
+            padded = articles[:max_articles_per_day]  # Truncate if too long
+            current_length = max_articles_per_day
+        
+        padded_encodings.append(padded)
+        
+        # Create mask: 1 for real data, 0 for padding
+        mask = [1] * min(current_length, max_articles_per_day) + [0] * max(0, max_articles_per_day - current_length)
+        masks.append(mask)
+    
+    encodings = np.array(padded_encodings, dtype=np.float32)
+    masks = np.array(masks, dtype=np.float32)
+    price_changes = np.array(price_changes, dtype=np.float32).reshape(-1, 1)
+    
+    return encodings, price_changes, masks
