@@ -193,3 +193,14 @@ cython_debug/
 #  refer to https://docs.cursor.com/context/ignore-files
 .cursorignore
 .cursorindexingignore
+
+# Load the final model by downloading it, do not include in version control
+# This is a placeholder for the final model path, which should be downloaded separately.
+Final/Tarun/models/final_model.pth
+
+#Remove all saved models from version control
+*.pth
+*.pkl
+
+#Remove tensorboard files from version control
+*tfevents*
