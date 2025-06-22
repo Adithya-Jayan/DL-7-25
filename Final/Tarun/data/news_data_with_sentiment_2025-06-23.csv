@@ -1,0 +1,10 @@
+date,text,label,predicted_sentiment,sentiment_confidence,sentiment_logits,sentiment_probabilities
+2025-06-23,"gold rate today: gold, silver up in morning deals",0,positive,0.9991,"[4.990909099578857, -2.615669012069702, -2.785414934158325]","{'positive': '0.9991', 'neutral': '0.0005', 'negative': '0.0004'}"
+2025-06-23,gold dips to one-month low as dollar strengthens,2,negative,0.9995,"[-2.5214529037475586, -2.5680737495422363, 5.737624168395996]","{'positive': '0.0003', 'neutral': '0.0002', 'negative': '0.9995'}"
+2025-06-23,india : rising gold price vindicates rbi's investment plan,0,positive,0.9972,"[4.141593933105469, -2.0436906814575195, -3.007490634918213]","{'positive': '0.9972', 'neutral': '0.0021', 'negative': '0.0008'}"
+2025-06-23,gold futures up 0.36% on positive global cues,0,positive,0.9992,"[5.061358451843262, -2.5146145820617676, -2.968214273452759]","{'positive': '0.9992', 'neutral': '0.0005', 'negative': '0.0003'}"
+2025-06-23,india : the truth about the nizam and his gold,1,neutral,0.9980,"[-2.7706799507141113, 4.416118621826172, -2.289713144302368]","{'positive': '0.0008', 'neutral': '0.9980', 'negative': '0.0012'}"
+2025-06-23,france : macron tries to take uk's gold crown as historic rivalry is reborn,1,neutral,0.9977,"[-2.0114753246307373, 4.309387683868408, -3.2566914558410645]","{'positive': '0.0018', 'neutral': '0.9977', 'negative': '0.0005'}"
+2025-06-23,gold prices steady but under pressure from firmer dollar,1,neutral,0.9979,"[-2.4170455932617188, 4.292877197265625, -2.703209400177002]","{'positive': '0.0012', 'neutral': '0.9979', 'negative': '0.0009'}"
+2025-06-23,lbma to reveal size of london's gold market on nov. 20,1,neutral,0.9977,"[-2.4792895317077637, 4.242591857910156, -2.5966713428497314]","{'positive': '0.0012', 'neutral': '0.9977', 'negative': '0.0011'}"
+2025-06-23,gold extends loss to a third session as dollar strengthens to 1 ï¿½-year high,2,negative,0.9993,"[-2.0174264907836914, -2.8140451908111572, 5.63066291809082]","{'positive': '0.0005', 'neutral': '0.0002', 'negative': '0.9993'}"

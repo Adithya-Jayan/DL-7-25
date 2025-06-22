@@ -1,0 +1,66 @@
+{
+  "predictions": {
+    "simple_average": 82.42470024885831,
+    "weighted_average": 82.53264815557463,
+    "sentiment_adjusted": 81.29465843324101,
+    "volatility_weighted": 82.38141354698787,
+    "trend_following": 82.41273193184377,
+    "meta_ensemble": 82.21246352354342
+  },
+  "percentage_changes": {
+    "simple_avg": 0.23677111027176484,
+    "weighted_avg": 0.3680466816076342,
+    "sentiment_adjusted": -1.1374740186164845,
+    "volatility_weighted": 0.18413010321434156,
+    "trend_following": 0.22221642642650377,
+    "meta_ensemble": -0.02133021120531792
+  },
+  "weights_used": {
+    "normalized_weights": {
+      "arimax": 0.1132075471698113,
+      "xgboost": 0.28301886792452824,
+      "rf": 0.22641509433962265,
+      "lstm": 0.1509433962264151,
+      "llm": 0.22641509433962265
+    },
+    "volatility_weights": {
+      "arimax": 0.3926564972207621,
+      "xgboost": 0.08738639424692153,
+      "rf": 0.23854559660004698,
+      "lstm": 0.08821367603815997,
+      "llm": 0.19319783589410933
+    },
+    "trend_weights": {
+      "arimax": 0.13636363636363635,
+      "xgboost": 0.22727272727272727,
+      "rf": 0.18181818181818182,
+      "lstm": 0.2727272727272727,
+      "llm": 0.18181818181818182
+    },
+    "meta_weights": {
+      "simple": 0.1,
+      "weighted": 0.25,
+      "sentiment": 0.2,
+      "volatility": 0.25,
+      "trend": 0.2
+    }
+  },
+  "metadata": {
+    "current_price": 82.2300033569336,
+    "current_sentiment": -0.75,
+    "recent_sentiment_avg": -0.296,
+    "recent_volatility": 0.007810833139206969,
+    "recent_trend": -0.0021680562910714627
+  },
+  "model_info": {
+    "created_date": "2025-06-23 01:53:30",
+    "sentiment_weight_boost": 1.5,
+    "individual_predictions": {
+      "arimax": 82.24430568941537,
+      "xgboost": 83.17499557521478,
+      "random_forest": 82.63219047144733,
+      "lstm": 81.82770381879871,
+      "llm": 82.24430568941537
+    }
+  }
+}

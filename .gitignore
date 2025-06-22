@@ -196,7 +196,9 @@ cython_debug/
 
 # Load the final model by downloading it, do not include in version control
 # This is a placeholder for the final model path, which should be downloaded separately.
-Final/Tarun/models/final_model.pth
+Final/Tarun/Model/final_model.pth
+Final/Tarun/Model/finbert_best_model_merged/*
+Final/Tarun/data/GOLDBEES_ETF_price*
 
 #Remove all saved models from version control
 *.pth
