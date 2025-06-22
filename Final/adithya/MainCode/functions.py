@@ -2,6 +2,7 @@
 import tensorflow_hub as hub
 import pandas as pd
 import numpy as np
+import torch
 
 
 #Preprocess the dataset
@@ -120,3 +121,13 @@ def group_into_variable_sets(df, max_articles_per_day=None):
     price_changes = np.array(price_changes, dtype=np.float32).reshape(-1, 1)
     
     return encodings, price_changes, masks
+
+
+def load_checkpoint(filepath, model, optimizer,device):
+    checkpoint = torch.load(filepath, map_location=device)
+    model.load_state_dict(checkpoint['model_state_dict'])
+    optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+    epoch = checkpoint['epoch']
+    loss = checkpoint['loss']
+    val_loss = checkpoint['val_loss']
+    return epoch, loss, model,optimizer
