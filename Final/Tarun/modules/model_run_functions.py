@@ -459,20 +459,3 @@ def load_news_llm_model( device, model_path):
     if os.path.exists(model_path):
         news_model, _ = load_checkpoint(model_path, news_model, device)
     return news_model
-
-# 3. Define the transform function for the TransformChain
-def news_llm_transform(inputs):
-    news_model = load_news_llm_model(inputs["device"], inputs["model_path"])
-    encodings, mask = generate_news_input(
-        inputs["device"],
-        inputs["news_data_csv"],
-        inputs["gold_data_plain_csv"],
-        inputs["finbert_model"],
-        inputs["news_data_with_sentiment_csv"]
-    )
-    with torch.no_grad():
-        pred = news_model(encodings, mask=mask)
-        if hasattr(pred, "item"):
-            pred = pred.item()
-    predicted_price = inputs["current_price"] * (1 + pred)
-    return {"predicted_price_news_llm": predicted_price}

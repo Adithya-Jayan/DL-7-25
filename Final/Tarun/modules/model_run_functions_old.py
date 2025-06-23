@@ -1,14 +1,7 @@
-#Import necessary packages.
-#import tensorflow_hub as hub
-import os
-import pickle
 import torch
-import torch.nn as nn
 import pandas as pd
 import numpy as np
 from datetime import datetime
-from torch.utils.data import DataLoader
-from statsmodels.tsa.statespace.sarimax import SARIMAX
 from sklearn.preprocessing import RobustScaler, MinMaxScaler
 from modules.functions import *
 from modules.modules import *
@@ -282,3 +275,37 @@ def predict_next_day_gold_price_ensemble(
         }
     }
     return results
+
+def generate_news_input(device,news_data_csv,gold_data_plain_csv,finbert_model,news_data_with_sentiment_csv):
+
+    batch_predict_and_update_csv(news_data_csv,finbert_model,news_data_with_sentiment_csv)
+
+    df_raw = pd.read_csv(news_data_with_sentiment_csv)
+    df_gold = pd.read_csv(gold_data_plain_csv)
+    df_processed = preprocess_dataset(df_raw)
+    df_processed = generate_topic_encodings(df_processed)
+    final_df = add_gold_price_change_with_weekend_handling(df_processed,df_gold)
+    
+    #Convert embeddings to required dimension.
+    # encodings = torch.tensor(np.random.rand(1, 9, 512).astype(np.float32), dtype=torch.float32).to(device)
+    encodings = np.array(list(final_df.sentiment_combined_encodings), dtype=np.float32)
+    encodings = torch.tensor(encodings.reshape(1,*encodings.shape), dtype=torch.float32).to(device)
+    
+    mask = torch.tensor(np.ones((encodings.shape[:2])).astype(np.float32), dtype=torch.float32).to(device)
+
+    return encodings, mask
+
+# 1. Define a function to load the SetTransformer model and weights
+def load_news_llm_model( device, model_path):
+    news_model = SetTransformer(
+        dim_input=512,
+        num_outputs=1,
+        dim_output=1,
+        num_inds=32,
+        dim_hidden=128,
+        num_heads=4,
+        ln=True
+    ).to(device)
+    if os.path.exists(model_path):
+        news_model, _ = load_checkpoint(model_path, news_model, device)
+    return news_model
