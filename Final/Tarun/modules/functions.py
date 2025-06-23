@@ -40,7 +40,7 @@ def extract_news_data_old():
 def extract_news_data(local_news=False):
     bullion_df = get_latest_bullionvault_articles()
     yf_df=get_latest_yf_articles()
-    yf_df['Date']=pd.to_datetime(yf_df['Date'],errors='coerce').dt.date
+    yf_df['Date']=pd.to_datetime(yf_df['Date'], format='mixed', utc=True).dt.date
     reuters_df = get_reuters_articles()
     df_list_for_concatenation = [bullion_df, yf_df, reuters_df]
     if local_news:
@@ -284,6 +284,69 @@ def get_reuters_articles():
                 print(f"Error fetching articles from {URL}: {e}")
                 continue
     return df
+
+def sarvam_translate_text(text, source_lang='te-IN', target_lang='en-IN'):
+    """
+    Translate text using Sarvam API
+    """
+    url = "https://api.sarvam.ai/translate"
+    payload = {
+        "input": text,
+        "source_language_code": source_lang,
+        "target_language_code": target_lang
+    }
+    headers = {
+        "api-subscription-key": SARVAM_API_KEY,
+        "Content-Type": "application/json"
+    }
+    try:
+        dotenv.load_dotenv()
+        SARVAM_API_KEY= os.getenv('SARVAM_API_KEY')
+        response = requests.post(url, json=payload, headers=headers)
+        response.raise_for_status()  # Raise an error for bad responses
+        translated_text = response.json()['translated_text']
+        return translated_text
+    except requests.exceptions.RequestException as e:
+        print(f"Error during translation: {e}")
+        return text
+    
+def fetch_bbc_telugu_news(URL="https://www.bbc.com/telugu/popular/read"):
+    """
+    Fetches the latest news from BBC Telugu.
+    """
+    try:
+        response = requests.get(URL)
+        soup = BeautifulSoup(response.content, 'html.parser')
+        articles = soup.find('ol').find_all('a')
+        list_data = []
+        for article in articles:
+            content = article.get_text(strip=True)+":"
+            link = article['href']
+            page_response = requests.get(link)
+            page_soup = BeautifulSoup(page_response.content, 'html.parser')
+            main_tag = page_soup.find('main')
+            date=main_tag.find('time')
+            if date:
+                date=date["datetime"]
+            for script in main_tag(['script', 'style']):
+                script.decompose()
+            for figure in main_tag.find_all('figure'):
+                figure.decompose()
+            #for section in main_tag.find_all('section'):
+            #    section.decompose()
+            paragraphs = main_tag.find_all('p')
+            for p in paragraphs:
+                if len(content) + len(p.get_text(strip=True)) + 1 <= 1000:
+                    content += p.get_text(strip=True)
+            translated_content = sarvam_translate_text(content)
+            #translated_content = content  # Use original content for now
+            data_point = {'Date': date, 'Content': translated_content}
+            list_data.append(data_point)
+            list_df=pd.DataFrame(list_data)
+            list_df['Date']= pd.to_datetime(list_df['Date'],errors='coerce').dt.date
+        return list_df
+    except Exception as e:
+        return
 # ---------------------------------------------------------------------
 
 # Function to predict sentiment using a pre-trained model
