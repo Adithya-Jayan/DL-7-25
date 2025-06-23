@@ -276,15 +276,14 @@ def predict_next_day_gold_price_ensemble(
     }
     return results
 
-def generate_news_input(device,news_data_csv,gold_data_plain_csv,finbert_model,news_data_with_sentiment_csv):
+def generate_news_input(device,news_data_csv,finbert_model,news_data_with_sentiment_csv):
 
     batch_predict_and_update_csv(news_data_csv,finbert_model,news_data_with_sentiment_csv)
 
     df_raw = pd.read_csv(news_data_with_sentiment_csv)
-    df_gold = pd.read_csv(gold_data_plain_csv)
     df_processed = preprocess_dataset(df_raw)
     df_processed = generate_topic_encodings(df_processed)
-    final_df = add_gold_price_change_with_weekend_handling(df_processed,df_gold)
+    final_df = get_sentiment_combined_encodings(df_processed)
     
     #Convert embeddings to required dimension.
     # encodings = torch.tensor(np.random.rand(1, 9, 512).astype(np.float32), dtype=torch.float32).to(device)

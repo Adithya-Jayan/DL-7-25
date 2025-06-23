@@ -651,84 +651,17 @@ def generate_topic_encodings(df_data):
     return df_data
 
 
-def add_gold_price_change_with_weekend_handling(df_data, df_gold):
+def get_sentiment_combined_encodings(df_data):
     """
     Merge news data with gold price changes, handling weekends by carrying forward Friday's price for Saturday/Sunday news.
     """
-    df_gold_premerge = df_gold.copy()
     df_data_premerge = df_data.copy()
-
-    df_gold_premerge['Date'] = pd.to_datetime(df_gold_premerge['Date'])
     df_data_premerge['Date'] = pd.to_datetime(df_data_premerge['date'])
-
-    # Compute the relative change in price from one day to the next before merging.
-    df_gold_premerge = df_gold_premerge.sort_values(by='Date').reset_index(drop=True)
-    df_gold_premerge['next_day_price'] = df_gold_premerge['Close'].shift(-1)
-    df_gold_premerge['next_day'] = df_gold_premerge['Date'].shift(-1)
-    df_gold_premerge['day_gap'] = (df_gold_premerge['next_day'] - df_gold_premerge['Date']).dt.days
-    df_gold_premerge['relative_change'] = (df_gold_premerge['next_day_price'] - df_gold_premerge['Close']) / df_gold_premerge['day_gap']
-    df_gold_premerge['relative_change'] = 100 * (df_gold_premerge['relative_change'] / df_gold_premerge['Close'])
-
-    # Adjust Date to be the day before, as we want to predict next day's price
-    df_gold_premerge['Date'] = df_gold_premerge['Date'] - pd.Timedelta(days=1)
-
-    # Create a mapping from date to price change
-    gold_map = df_gold_premerge.set_index('Date')['relative_change'].to_dict()
-
-    # For each news date, find the most recent available gold price change (carry forward for weekends)
-    def get_price_change(news_date):
-        # If news_date is in gold_map, return directly
-        if news_date in gold_map:
-            return gold_map[news_date]
-        # If not, go backwards to find the last available date (for weekends)
-        prev_date = news_date
-        while prev_date not in gold_map or pd.isna(gold_map.get(prev_date, None)):
-            prev_date -= pd.Timedelta(days=1)
-            # To avoid infinite loop, break if too far in the past
-            if prev_date < min(gold_map.keys()):
-                return np.nan
-        return gold_map[prev_date]
-
-    df_data_premerge['price_percentage_change'] = df_data_premerge['Date'].apply(get_price_change)
 
     # Merge topic_encodings and sentiment
     df_data_premerge['sentiment_combined_encodings'] = df_data_premerge['topic_encodings'] * df_data_premerge['sentiment']
 
-    final_df = df_data_premerge[['Date', 'text', 'sentiment', 'topic_encodings', 'sentiment_combined_encodings', 'price_percentage_change']].copy()
-
-    return final_df
-
-def add_gold_price_change(df_data,df_gold):
-    
-
-    #Merge above dataframe with our gold data.
-
-    df_gold_premerge = df_gold.copy()
-    df_data_premerge = df_data.copy()
-
-    df_gold_premerge['Date'] = pd.to_datetime(df_gold_premerge['Date'])
-    df_data_premerge['Date'] = pd.to_datetime(df_data_premerge['date'])
-
-    # Compute the relative change in price from one day to the next before merging.
-    df_gold_premerge = df_gold_premerge.sort_values(by='Date').reset_index(drop=True)
-    df_gold_premerge['next_day_price'] = df_gold_premerge['Close'].shift(-1)
-    df_gold_premerge['next_day'] = df_gold_premerge['Date'].shift(-1)
-    df_gold_premerge['day_gap'] = (df_gold_premerge['next_day'] - df_gold_premerge['Date']).dt.days
-    df_gold_premerge['relative_change'] = (df_gold_premerge['next_day_price'] - df_gold_premerge['Close']) / df_gold_premerge['day_gap']
-
-    #Make it a percentage change
-    df_gold_premerge['relative_change'] = 100 * (df_gold_premerge['relative_change'] / df_gold_premerge['Close'])
-
-    # # We want to predict gold price for the next day. Data to use for prediction is the day before. ]
-    df_gold_premerge['Date'] = df_gold_premerge['Date'] - pd.Timedelta(days=1)
-
-    # Perform the merge on the adjusted date
-    merged_df = pd.merge(df_data_premerge, df_gold_premerge, on='Date', how='inner')
-    merged_df['sentiment_combined_encodings'] =  merged_df['topic_encodings'] * merged_df['sentiment']
-
-    #Rename relative_change column to price_percentage_change
-    merged_df = merged_df.rename(columns={'relative_change':'price_percentage_change'})
-    final_df = merged_df[['Date','text','sentiment','topic_encodings','sentiment_combined_encodings','price_percentage_change']].copy()
+    final_df = df_data_premerge[['Date', 'sentiment', 'sentiment_combined_encodings']].copy()
 
     return final_df
 
