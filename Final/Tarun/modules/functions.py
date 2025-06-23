@@ -24,7 +24,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 # -----------------------------------------------------------------------------------
 # Function to get the latest news data from various sources
 # This function combines the latest articles from BullionVault, Yahoo Finance, and Reuters.
-def extract_news_data():
+def extract_news_data_old():
     bullion_df = get_latest_bullionvault_articles()
     yf_df=get_latest_yf_articles()
     yf_df['Date']=pd.to_datetime(yf_df['Date'],errors='coerce').dt.date
@@ -35,6 +35,23 @@ def extract_news_data():
     df_combined = df_combined.sort_values(by='Date')
     df_combined=df_combined[df_combined['Date'] >= three_days_ago]
     # Placeholder for actual news data extraction logic
+    return df_combined
+
+def extract_news_data(local_news=False):
+    bullion_df = get_latest_bullionvault_articles()
+    yf_df=get_latest_yf_articles()
+    yf_df['Date']=pd.to_datetime(yf_df['Date'],errors='coerce').dt.date
+    reuters_df = get_reuters_articles()
+    df_list_for_concatenation = [bullion_df, yf_df, reuters_df]
+    if local_news:
+        telugu_news_df=fetch_bbc_telugu_news()
+        df_list_for_concatenation.append(telugu_news_df)
+    
+    three_days_ago = pd.to_datetime('today').date() - timedelta(days=3)
+
+    df_combined = pd.concat(df_list_for_concatenation, ignore_index=True)
+    df_combined = df_combined.sort_values(by='Date')
+    df_combined=df_combined[df_combined['Date'] >= three_days_ago]
     return df_combined
 
 # -----------------------------------------------------------------------------------
