@@ -1,6 +1,7 @@
 #Import necessary packages.
 #import tensorflow_hub as hub
 import os
+import re
 import torch
 import pandas as pd
 import numpy as np
@@ -35,6 +36,101 @@ def extract_news_data():
     df_combined=df_combined[df_combined['Date'] >= three_days_ago]
     # Placeholder for actual news data extraction logic
     return df_combined
+
+# -----------------------------------------------------------------------------------
+# Function to clean and prepare articles for tokenizer
+def clean_and_prepare_articles(
+    input_file="bullionvault_articles.csv",
+    output_file="tokenizer_ready_output.csv",
+    max_chunk_len=1500
+):
+    # ===== STEP 1: Load input file =====
+    df = pd.read_csv(input_file)
+    df.columns = [c.strip() for c in df.columns]
+
+    # ===== STEP 2: Detect and prepare content column =====
+    if 'News' in df.columns:
+        df['Text'] = df['News']
+    elif 'Content' in df.columns:
+        df['Text'] = df['Content']
+    else:
+        raise Exception("no valid text column found (check if column is named News or Content)")
+
+    if 'Date' in df.columns:
+        df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
+    elif 'Dates' in df.columns:
+        df['Date'] = pd.to_datetime(df['Dates'], errors='coerce')
+    else:
+        df['Date'] = pd.NaT
+
+    # ===== STEP 3: Basic cleaning =====
+    def clean_text(t):
+        if not isinstance(t, str):
+            return ""
+        t = t.replace("Title:", "")
+        t = t.strip()
+        return ' '.join(t.split())
+
+    df['Text'] = df['Text'].apply(clean_text)
+    df = df[df['Text'] != ""]
+
+    # ===== STEP 4: Break long content into chunks =====
+    def split_into_sentences(txt):
+        return re.split(r'(?<=[.!?])\s+(?=[A-Z])', txt)
+
+    def chunk_text(text, max_len=max_chunk_len):
+        sents = split_into_sentences(text)
+        result = []
+        chunk = ""
+        for s in sents:
+            if len(chunk) + len(s) + 1 <= max_len:
+                chunk += " " + s if chunk else s
+            else:
+                result.append(chunk)
+                chunk = s
+        if chunk:
+            result.append(chunk)
+        return result
+
+    # ===== STEP 5: Sentiment labeling =====
+    def get_label(text):
+        text = text.lower()
+        if any(word in text for word in ['gold prices rise', 'surge', 'bullish', 'rate cut', 'safe-haven', 'investing trends higher']):
+            return 0
+        elif any(word in text for word in ['fall', 'drop', 'bearish', 'loss', 'decline', 'sell-off']):
+            return 2
+        else:
+            return 1
+
+    if 'Price Sentiment' in df.columns:
+        convert = {"positive": 0, "neutral": 1, "none": 1, "negative": 2}
+        df['Label'] = df['Price Sentiment'].str.lower().map(convert)
+    else:
+        df['Label'] = df['Text'].apply(get_label)
+
+    df = df.dropna(subset=['Label'])
+
+    # ===== STEP 6: Build final rows =====
+    final_rows = []
+    for idx, row in df.iterrows():
+        text = row['Text']
+        date = row['Date']
+        label = int(row['Label'])
+        parts = chunk_text(text)
+        for p in parts:
+            line = clean_text(p.lower())
+            if line:
+                final_rows.append({
+                    'date': date,
+                    'text': line,
+                    'label': label
+                })
+
+    # ===== STEP 7: Save the final cleaned and labeled file =====
+    final_df = pd.DataFrame(final_rows)
+    final_df.to_csv(output_file, index=False)
+    print("Done! Saved to:", output_file)
+
 # -----------------------------------------------------------------------------------
 
 # Function to get the latest articles from BullionVault
