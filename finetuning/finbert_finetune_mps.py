@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # Fine-tuning FinBERT for Financial Sentiment Classification in Google Colab with LoRA and Export Options
 
 # Step 1: Install required packages (for Google Colab users only)
@@ -61,7 +62,7 @@ print(f"Intermediate size: {model.config.intermediate_size}")
 lora_config = LoraConfig(
     r=16,               # Increased rank for more capacity
     lora_alpha=32,      # Increased alpha (usually 2*r)
-    target_modules=["query", "value", "key"],  # Added key attention
+    target_modules=["query", "value", "key", "dense"],  # Added key attention
     lora_dropout=0.1,
     bias="none",
     task_type=TaskType.SEQ_CLS

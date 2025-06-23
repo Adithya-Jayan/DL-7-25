@@ -2,9 +2,9 @@ import torch
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
 # Import predict_sentiment from your finbert_finetune_refactored.py
-from finbert_finetune_refactored import predict_sentiment
+from finetuning.finbert_finetune_refactored import predict_sentiment
 
-def test_model(model_path="./finbert_best_model_merged"):
+def test_model(model_path="../finbert_best_model_merged"):
     """
     Test the trained model on sample texts and print sentiment, logits, and probabilities.
     """

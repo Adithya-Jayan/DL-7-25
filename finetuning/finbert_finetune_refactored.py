@@ -326,8 +326,8 @@ def train_kfold(model, tokenizer, dataset, device, n_splits=3):
                 print(f"Error loading best model: {e}")
                 best_model = None
             if best_model is not None:
-                best_model.save_pretrained("./finbert_best_model")
-                tokenizer.save_pretrained("./finbert_best_model")
+                best_model.save_pretrained("../finbert_best_model")
+                tokenizer.save_pretrained("../finbert_best_model")
                 return best_model, avg_metrics, fold_results, best_model_path
         
         return None, None, None
@@ -399,8 +399,8 @@ def main():
         
         if best_model is not None:
             # Save best model
-            model.save_pretrained("./finbert_best_model")  # This is correct for PEFT
-            tokenizer.save_pretrained("./finbert_best_model")
+            model.save_pretrained("../finbert_best_model")  # This is correct for PEFT
+            tokenizer.save_pretrained("../finbert_best_model")
             
             # Save metrics
             with open("training_metrics.txt", "w") as f:
@@ -424,7 +424,7 @@ if __name__ == "__main__":
         base_model = AutoModelForSequenceClassification.from_pretrained("ProsusAI/finbert", num_labels=3)
         best_model = PeftModel.from_pretrained(base_model, best_model_path)
         merged_model = best_model.merge_and_unload()
-        merged_model.save_pretrained("./finbert_best_model_merged")
+        merged_model.save_pretrained("../finbert_best_model_merged")
 
 def predict_sentiment(text, model, tokenizer, device):
     """
@@ -472,7 +472,7 @@ def predict_sentiment(text, model, tokenizer, device):
         print(f"Error in prediction: {e}")
         return None
 
-def test_model(model_path="./finbert_best_model_merged"):
+def test_model(model_path="../finbert_best_model_merged"):
     """
     Test the trained model on sample texts
     """
