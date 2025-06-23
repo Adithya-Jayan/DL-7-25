@@ -40,7 +40,7 @@ def extract_news_data_old():
 def extract_news_data(local_news=False):
     bullion_df = get_latest_bullionvault_articles()
     yf_df=get_latest_yf_articles()
-    yf_df['Date']=pd.to_datetime(yf_df['Date'],errors='coerce').dt.date
+    yf_df['Date']=pd.to_datetime(yf_df['Date'], format='mixed', utc=True).dt.date
     reuters_df = get_reuters_articles()
     df_list_for_concatenation = [bullion_df, yf_df, reuters_df]
     if local_news:
