@@ -1,7 +1,7 @@
 import torch
 import pandas as pd
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
-from finbert_finetune_refactored import predict_sentiment
+from finetuning.finbert_finetune_refactored import predict_sentiment
 
 def batch_predict_and_update_csv(
     csv_path="Final_gold-dataset-sinha-khandait1.csv",
