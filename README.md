@@ -5,7 +5,7 @@
 
 ---
 
-![Initial Block Diagram](Exploration_and_testing\Initial_structure_proposal.png)
+![Initial Block Diagram](Exploration_and_testing/Initial_structure_proposal.png)
 
 ### Section 1: Introduction and Paper.
 This project presents a language model-based automation workflow for forecasting gold price movements in India, leveraging sentiment signals extracted from financial news, stock market data, and technical indicators such as moving averages and RSI. While sentiment-driven models are widely used in equity markets, their application in gold price movement prediction is underexplored.
@@ -16,9 +16,9 @@ The proposed methodology orchestrates a system capable of performing data collec
 
 ### Section 2: Files and repository Structuring. [How to Run]
 
-- Main Langchain based system implementation: [Final_chain](Final\Tarun\Final_Gold_Price_Prediction_Model.ipynb)
+- Main Langchain based system implementation: [Final_chain](Final/Tarun/Final_Gold_Price_Prediction_Model.ipynb)
 
-- Gui template (Partially integrated): [GUI](Final\Tarun\gui.py)
+- Gui template (Partially integrated): [GUI](Final/Tarun/gui.py)
 
 > All scripts and function definitions used for final implementatio, integration, analysis and testing are available in the [Final/](Final/) directory.
 
