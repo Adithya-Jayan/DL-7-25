@@ -115,7 +115,7 @@ def run_chain_handler(date: str, custom_text: str) -> Tuple[str, str, str]:
         metadata = final_output.get("metadata", {})
         
         output_display = f"""## Results
-        
+
 {result_text}
 
 ### Metadata
@@ -141,80 +141,87 @@ def run_chain_handler(date: str, custom_text: str) -> Tuple[str, str, str]:
 
 # Create the Gradio interface
 def create_interface():
-    with gr.Blocks(title="LLM Chain GUI", theme=gr.themes.Soft()) as demo:
-        # Header
-        gr.Markdown("""
-        # 🤖 LLM Chain Processing Interface
+    with gr.Blocks(title="LLM Chain GUI") as demo:
         
-        This interface allows you to run your LLM chain with customizable inputs and real-time status tracking.
-        You can fetch data for specific dates, use custom text inputs, and monitor the entire processing pipeline.
-        """)
+        gr.Markdown("# 🤖 LLM Chain Processing Interface")
+        gr.Markdown("*Process your data with customizable inputs and real-time monitoring*")
+        
+        # ===== INPUT SECTION =====
+        gr.Markdown("---")
+        gr.Markdown("## ⚙️ Input Configuration")
         
         with gr.Row():
-            with gr.Column(scale=1):
-                # Input controls
-                gr.Markdown("## 📅 Input Configuration")
-                
+            with gr.Column():
                 date_input = gr.DateTime(
                     label="Select Date",
                     value=datetime.datetime.now(),
                     info="Choose the date for data processing"
                 )
                 
-                custom_text_input = gr.Textbox(
-                    label="Custom Text Input (Optional)",
-                    placeholder="Enter custom text to replace get_text() call...",
-                    lines=3,
-                    info="If provided, this text will be used instead of fetching text data"
-                )
+                # Advanced options in accordion
+                with gr.Accordion("Advanced Options", open=False):
+                    custom_text_input = gr.Textbox(
+                        label="Custom Text Input",
+                        placeholder="Enter custom text to replace get_text() call...",
+                        lines=3,
+                        info="If provided, this text will be used instead of fetching text data"
+                    )
                 
-                # Action buttons
                 with gr.Row():
-                    fetch_btn = gr.Button("🔄 Fetch Data", variant="secondary")
-                    run_chain_btn = gr.Button("🚀 Run LLM Chain", variant="primary")
+                    fetch_btn = gr.Button("Fetch Data", variant="secondary")
+                    run_chain_btn = gr.Button("Run LLM Chain", variant="primary")
                 
-                # Status indicator
                 status_display = gr.Textbox(
-                    label="📊 Status",
+                    label="Status",
                     value="Ready to process...",
                     interactive=False,
                     lines=1
                 )
-            
-            with gr.Column(scale=2):
-                # Data display section
-                gr.Markdown("## 📋 Fetched Data")
-                
-                with gr.Row():
-                    text_display = gr.Textbox(
-                        label="Text Data",
-                        placeholder="Text data will appear here after fetching...",
-                        lines=4,
-                        interactive=False
-                    )
-                    
-                    value_display = gr.Textbox(
-                        label="Value Data",
-                        placeholder="Value data will appear here after fetching...",
-                        lines=4,
-                        interactive=False
-                    )
         
-        # Output section
-        gr.Markdown("## 🎯 LLM Chain Results")
+        # ===== DATA PREVIEW SECTION =====
+        gr.Markdown("---")
+        gr.Markdown("## 👀 Data Preview")
+        
+        with gr.Row():
+            text_display = gr.Textbox(
+                label="Text Data",
+                placeholder="Text data will appear here after fetching...",
+                lines=4,
+                interactive=False
+            )
+            
+            value_display = gr.Textbox(
+                label="Value Data",
+                placeholder="Value data will appear here after fetching...",
+                lines=4,
+                interactive=False
+            )
+        
+        # ===== RESULTS SECTION =====
+        gr.Markdown("---")
+        gr.Markdown("## 🎯 Processing Results")
         
         with gr.Row():
             with gr.Column():
                 output_display = gr.Markdown(
-                    value="*Results will appear here after running the LLM chain...*",
-                    label="Chain Output"
+                    value="*Results will appear here after running the LLM chain...*"
                 )
             
             with gr.Column():
                 graph_display = gr.Markdown(
-                    value="*Generated visualizations will appear here...*",
-                    label="Visualizations"
+                    value="*Generated visualizations will appear here...*"
                 )
+        
+        # ===== USAGE GUIDE =====
+        gr.Markdown("---")
+        gr.Markdown("""
+        ## 💡 Usage Guide
+        
+        - **Fetch Data**: Preview the data that will be processed
+        - **Run LLM Chain**: Execute the complete processing pipeline
+        - **Custom Text**: Use advanced options to override automatic text fetching
+        - **Status Monitor**: Track real-time progress of operations
+        """)
         
         # Event handlers
         fetch_btn.click(
@@ -230,16 +237,6 @@ def create_interface():
             outputs=[output_display, graph_display, status_display],
             show_progress=True
         )
-        
-        # Add some helpful information
-        gr.Markdown("""
-        ---
-        ### 💡 Usage Tips
-        - **Fetch Data**: Use this to preview the data that will be processed
-        - **Custom Text**: When provided, replaces the automatic text fetching
-        - **Status Monitor**: Shows real-time progress of operations
-        - **Date Selection**: All operations use the selected date for context
-        """)
     
     return demo
 
