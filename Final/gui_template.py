@@ -143,17 +143,17 @@ def run_chain_handler(date: str, custom_text: str) -> Tuple[str, str, str]:
 def create_interface():
     with gr.Blocks(title="LLM Chain GUI") as demo:
         
-        gr.Markdown("# 🤖 LLM Chain Processing Interface")
-        gr.Markdown("*Process your data with customizable inputs and real-time monitoring*")
+        gr.Markdown("# Team 7: Sentiment Based Gold Price Predictions.")
+        gr.Markdown("*A live news and trend based gold price prediction interface!*")
         
         # ===== INPUT SECTION =====
         gr.Markdown("---")
-        gr.Markdown("## ⚙️ Input Configuration")
+        gr.Markdown("## Input Configuration [Date used for searching news data]")
         
         with gr.Row():
             with gr.Column():
                 date_input = gr.DateTime(
-                    label="Select Date",
+                    label="Select Date to perform prediction for",
                     value=datetime.datetime.now(),
                     info="Choose the date for data processing"
                 )
@@ -162,7 +162,7 @@ def create_interface():
                 with gr.Accordion("Advanced Options", open=False):
                     custom_text_input = gr.Textbox(
                         label="Custom Text Input",
-                        placeholder="Enter custom text to replace get_text() call...",
+                        placeholder="Enter custom text here to use instead of scraped news",
                         lines=3,
                         info="If provided, this text will be used instead of fetching text data"
                     )
@@ -180,7 +180,7 @@ def create_interface():
         
         # ===== DATA PREVIEW SECTION =====
         gr.Markdown("---")
-        gr.Markdown("## 👀 Data Preview")
+        gr.Markdown("## Extracted Data Preview")
         
         with gr.Row():
             text_display = gr.Textbox(
@@ -199,7 +199,7 @@ def create_interface():
         
         # ===== RESULTS SECTION =====
         gr.Markdown("---")
-        gr.Markdown("## 🎯 Processing Results")
+        gr.Markdown("## Final Results:")
         
         with gr.Row():
             with gr.Column():
@@ -215,12 +215,12 @@ def create_interface():
         # ===== USAGE GUIDE =====
         gr.Markdown("---")
         gr.Markdown("""
-        ## 💡 Usage Guide
+        ## Options/Help:
         
-        - **Fetch Data**: Preview the data that will be processed
-        - **Run LLM Chain**: Execute the complete processing pipeline
-        - **Custom Text**: Use advanced options to override automatic text fetching
-        - **Status Monitor**: Track real-time progress of operations
+        - **Fetch Data**: This pulls news data and past gold price data based on the provided input date. 
+        - **Run LLM Chain**: Execute the complete processing pipeline using the extracted data. [This can be previewed before running in the Preview section]
+        - **Custom Text**: Use advanced options to override automatic text fetching with self-typed data (Just for testing).
+        - **Status Monitor**: Provides status of current action running in the background.
         """)
         
         # Event handlers
