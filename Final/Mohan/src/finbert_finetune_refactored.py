@@ -29,6 +29,7 @@ from transformers import (
 #traindt = "Final_reuters_articles_processed 1.csv"
 #traindt = "reuters_tokenizer_ready.csv"
 traindt = "Final_gold-dataset-sinha-khandait1.csv"
+working_dir = "/Users/mohanpanakam/Documents/Finetuning/finetuning"
 
 class CustomTrainer(Trainer):
     """Custom trainer with class weights support"""
@@ -125,7 +126,7 @@ def train_and_evaluate_fold(fold_dataset, model, tokenizer, device, fold_num, n_
         
         # Training arguments
         training_args = TrainingArguments(
-            output_dir=f"./finbert_fold_{fold_num}",
+            output_dir=f"{working_dir}/finbert_fold_{fold_num}",
             per_device_train_batch_size=4,
             per_device_eval_batch_size=2,
             num_train_epochs=5,
@@ -299,8 +300,8 @@ def train_kfold(model, tokenizer, dataset, device, n_splits=5):
                 if metrics['validation']['f1'] > best_f1:
                     best_f1 = metrics['validation']['f1']
                     # Save the best model's weights to disk
-                    model.save_pretrained(f"./best_model_fold_{fold_num}")
-                    best_model_path = f"./best_model_fold_{fold_num}"
+                    model.save_pretrained(f"{working_dir}/best_model_fold_{fold_num}")
+                    best_model_path = f"{working_dir}/best_model_fold_{fold_num}"
                     print(f"New best model found for fold {fold_num + 1} with F1: {best_f1:.4f}")
                     print(f"Model saved to {best_model_path}")
         
@@ -326,8 +327,8 @@ def train_kfold(model, tokenizer, dataset, device, n_splits=5):
                 print(f"Error loading best model: {e}")
                 best_model = None
             if best_model is not None:
-                best_model.save_pretrained("../finbert_best_model")
-                tokenizer.save_pretrained("../finbert_best_model")
+                best_model.save_pretrained(f"{working_dir}/finbert_best_model")
+                tokenizer.save_pretrained(f"{working_dir}/finbert_best_model")
                 return best_model, avg_metrics, fold_results, best_model_path
         
         return None, None, None
@@ -399,8 +400,8 @@ def main():
         
         if best_model is not None:
             # Save best model
-            model.save_pretrained("../finbert_best_model")  # This is correct for PEFT
-            tokenizer.save_pretrained("../finbert_best_model")
+            model.save_pretrained(f"{working_dir}/finbert_best_model")  # This is correct for PEFT
+            tokenizer.save_pretrained(f"{working_dir}/finbert_best_model")
             
             # Save metrics
             with open("training_metrics.txt", "w") as f:
@@ -424,7 +425,7 @@ if __name__ == "__main__":
         base_model = AutoModelForSequenceClassification.from_pretrained("ProsusAI/finbert", num_labels=3)
         best_model = PeftModel.from_pretrained(base_model, best_model_path)
         merged_model = best_model.merge_and_unload()
-        merged_model.save_pretrained("../finbert_best_model_merged")
+        merged_model.save_pretrained(f"{working_dir}/finbert_best_model_merged")
 
 def predict_sentiment(text, model, tokenizer, device):
     """
@@ -472,7 +473,7 @@ def predict_sentiment(text, model, tokenizer, device):
         print(f"Error in prediction: {e}")
         return None
 
-def test_model(model_path="../finbert_best_model_merged"):
+def test_model(model_path=f"{working_dir}/finbert_best_model_merged"):
     """
     Test the trained model on sample texts
     """
